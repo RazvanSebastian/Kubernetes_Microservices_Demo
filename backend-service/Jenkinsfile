@@ -1,0 +1,66 @@
+def tag="razvan95"
+def imageName="spring-rest-app"
+def imageTag="1.4"
+
+podTemplate(containers: [
+    containerTemplate(
+        name: "maven", 
+        image: "maven:3.3.9-jdk-8-alpine", 
+        ttyEnabled: true, 
+        command: "cat"
+    ),
+    containerTemplate(
+        name: "docker", 
+        image: "docker", 
+        command: "cat", 
+        ttyEnabled: true,   
+        resourceRequestCpu: '400m',
+        resourceLimitCpu: '500m',
+        resourceRequestMemory: '400Mi',
+        resourceLimitMemory: '500Mi'
+    )
+    ],
+    volumes: [
+        hostPathVolume(hostPath: "/var/run/docker.sock", mountPath: "/var/run/docker.sock")
+    ],
+){
+    node(POD_LABEL) {
+        stage("maven container stage") {
+            git "https://github.com/RazvanSebastian/Kubernetes_Microservices_Demo.git"
+            container("maven") {
+                stage("Build a Maven project") {
+                    withMaven(globalMavenSettingsConfig: 'fc6a1d65-6c48-4a26-a94f-70d8de49d93a', jdk: 'java', maven: 'maven_home') {
+                        sh "mvn clean install -DskipTests -B -f backend-service/pom.xml"
+                    }
+                }
+            }
+        }
+        stage("Docker container stage"){
+            container("docker"){
+                stage("Build image"){
+                    imageBuild(imageName, imageTag)
+                }
+                stage("Push image"){
+                    withCredentials([usernamePassword(credentialsId: "dockerhub", usernameVariable: "username", passwordVariable: "password")]) {
+			            pushToImage(imageName, imageTag, USERNAME, PASSWORD)
+                    }
+                }
+            }
+        }
+        stage("Kubernetes deploy"){
+            sh "sed -i 's/IMAGE_TAG/"+imageTag+"/g' k8s-deplyoment-files/backend-deployment.yaml"
+            kubernetesDeploy(kubeconfigId: 'KUBERNETES_CLUSTER_CONFIG', configs: 'k8s-deplyoment-files/backend-deployment.yaml', enableConfigSubstitution: true)
+        }
+    }
+}
+
+def imageBuild(imageName, tag){
+    sh "docker build -t ${imageName}:${tag} --file backend-service/Dockerfile ."
+}
+
+def pushToImage(imageName, tag, dockerUser, dockerPassword){
+    sh "docker login -u ${dockerUser} -p ${dockerPassword}"
+    sh "docker tag ${imageName}:${tag} ${dockerUser}/${imageName}:${tag}"
+    sh "docker push ${dockerUser}/${imageName}:${tag}"
+    echo "Image push complete"
+}
