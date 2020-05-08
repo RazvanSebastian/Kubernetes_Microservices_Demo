@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nexus-pv
+  labels:
+    app: nexus
+spec:
+  capacity:
+    storage: 5Gi # This size is used to match a volume to a tenents claim
+  accessModes:
+    - ReadWriteMany # Access modes are defined below
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    server: 192.168.1.13 # Please change this to your NFS server
+    path: /srv/nfs4/data/nexus # Please change this to the relevant share
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nexus-pv-claim
+  namespace: nexus
+spec:
+  selector:
+    matchLabels:
+      app: nexus
+  accessModes:
+    - ReadWriteMany # Access modes for volumes is defined under Persistent Volumes
+  resources:
+    requests:
+      storage: 5Gi # volume size requested
+
+---
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: nexus-service
+  namespace: nexus
+  labels: 
+    app: nexus
+spec: 
+  type: NodePort   
+  ports: 
+    - port: 8081
+      targetPort: 8081
+      nodePort: 30081
+  selector: 
+    app: nexus
+    
+--- 
+      
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-deployment
+  namespace: nexus
+  labels:
+    app: nexus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus
+  template:
+    metadata:
+      labels:
+        app: nexus
+    spec:
+        containers:
+        - name: nexus
+          image: sonatype/nexus3:latest
+          ports:
+          - containerPort: 8081
+          volumeMounts:
+          - name: nexus-home
+            mountPath: "/nexus-data"
+          resources:
+            requests:
+              memory: "1000Mi"
+              cpu: "750m"
+            limits:
+              memory: "2000Mi"
+              cpu: "1000m"
+        volumes:
+        - name: nexus-home
+          persistentVolumeClaim:
+            claimName: nexus-pv-claim

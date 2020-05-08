@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgresql-pv
+  labels:
+    app: postgresql
+spec:
+  capacity:
+    storage: 2Gi # This size is used to match a volume to a tenents claim
+  accessModes:
+    - ReadWriteMany # Access modes are defined below
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    server: 192.168.1.13 # Please change this to your NFS server
+    path: /srv/nfs4/data/postgresql # Please change this to the relevant share
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-pv-claim
+  namespace: development
+spec:
+  selector:
+    matchLabels:
+      app: postgresql
+  accessModes:
+    - ReadWriteMany # Access modes for volumes is defined under Persistent Volumes
+  resources:
+    requests:
+      storage: 2Gi # volume size requested
+
+---
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: postgresql-service
+  namespace: development
+  labels: 
+    app: postgresql
+spec: 
+  #type: NodePort   
+  ports: 
+    - port: 5432
+      targetPort: 5432
+      #nodePort: 30543
+  selector: 
+    app: postgresql
+    
+--- 
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: postgresl-deployment
+    namespace: development
+    labels:
+        app: postgresql
+spec:
+    replicas: 2
+    selector:
+        matchLabels:
+            app: postgresql
+    template:
+        metadata:
+            labels:
+                app: postgresql
+        spec:
+            containers:
+                - name: postgresql
+                  image: postgres:9.6
+                  ports:
+                  - containerPort: 5432
+                  env:
+                  - name: POSTGRES_USER
+                    value: postgres
+                  - name: POSTGRES_PASSWORD
+                    value: "password"
+                  - name: POSTGRES_DB
+                    value: "db"
+                  - name: PGDATA
+                    value: /var/lib/postgresql/data/pgdata
+                  volumeMounts:
+                  - name: postgresql-home
+                    mountPath: "/var/lib/postgresql/data"
+                  resources:
+                    requests:
+                      memory: "250Mi"
+                      cpu: "200m"
+                    limits:
+                      memory: "300Mi"
+                      cpu: "250m"
+            volumes:
+            - name: postgresql-home
+              persistentVolumeClaim:
+                claimName: postgresql-pv-claim
