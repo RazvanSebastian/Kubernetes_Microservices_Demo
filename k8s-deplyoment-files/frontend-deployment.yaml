@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: reactjs-app-service
+  namespace: development
+  labels:
+    app: reactjs-app
+spec:
+  type: NodePort
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30030
+    protocol: TCP
+  selector:
+    app: reactjs-app
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reactjs-app-deployment
+  namespace: development
+  labels:
+    app: reactjs-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reactjs-app
+  template:
+    metadata:
+      labels:
+        app: reactjs-app
+    spec:
+      containers:
+      - name: reactjs-app
+        image: razvan95/react-web-app:IMAGE_TAG
+        resources:
+            requests:
+                memory: "128Mi"
+                cpu: "250m"
+            limits:
+                memory: "256Mi"
+                cpu: "500m"
+        ports:
+        - containerPort: 3000
