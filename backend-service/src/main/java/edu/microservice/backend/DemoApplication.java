@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.List;
+
 @SpringBootApplication
-@RestController
-@RequestMapping("/api")
 public class DemoApplication {
 
 	@Autowired
@@ -22,33 +22,6 @@ public class DemoApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(DemoApplication.class, args);
-	}
-
-	@GetMapping
-	public ResponseEntity<?> findAll() {
-		return ResponseEntity.ok(demoRepository.findAll());
-	}
-
-	@PostMapping
-	public ResponseEntity<?> save(@RequestBody DemoEntity entity) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(demoRepository.save(entity));
-	}
-
-	@GetMapping("/jvm-info")
-	public ResponseEntity<?> greeting() {
-		final Runtime runtime = Runtime.getRuntime();
-		final String jvmMetadata = JVMHelper.getJvmInfo(runtime);
-		return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(jvmMetadata);
-	}
-
-	@Bean
-	public WebMvcConfigurer corsConfigurer() {
-		return new WebMvcConfigurer() {
-			@Override
-			public void addCorsMappings(CorsRegistry registry) {
-				registry.addMapping("/").allowedOrigins("*");
-			}
-		};
 	}
 
 }

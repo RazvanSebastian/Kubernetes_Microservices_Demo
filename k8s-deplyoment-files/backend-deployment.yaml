@@ -36,6 +36,6 @@ spec:
     spec:
       containers:
       - name: spring-app
-        image: razvan95/spring-rest-app:IMAGE_TAG
+        image: razvan95/spring-demo-hello-world
         ports:
         - containerPort: 8080

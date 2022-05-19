@@ -1,4 +1,10 @@
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexus
+---
+
+apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: nexus-pv
@@ -10,8 +16,11 @@ spec:
   accessModes:
     - ReadWriteMany # Access modes are defined below
   persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - hard
+    - nfsvers=3
   nfs:
-    server: 192.168.1.13 # Please change this to your NFS server
+    server: 192.168.1.106 # Please change this to your NFS server
     path: /srv/nfs4/data/nexus # Please change this to the relevant share
 
 ---
@@ -56,8 +65,6 @@ kind: Deployment
 metadata:
   name: nexus-deployment
   namespace: nexus
-  labels:
-    app: nexus
 spec:
   replicas: 1
   selector:
@@ -68,22 +75,33 @@ spec:
       labels:
         app: nexus
     spec:
-        containers:
+      containers:
         - name: nexus
-          image: sonatype/nexus3:latest
-          ports:
-          - containerPort: 8081
-          volumeMounts:
-          - name: nexus-home
-            mountPath: "/nexus-data"
+          image: sonatype/nexus:latest
+          securityContext:
+            runAsUser: 0
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "chown -R 200:200 /opt/nexus"]
+          env:
+          - name: MAX_HEAP
+            value: "800m"
+          - name: MIN_HEAP
+            value: "300m"
           resources:
-            requests:
-              memory: "1000Mi"
-              cpu: "750m"
             limits:
-              memory: "2000Mi"
+              memory: "2Gi"
               cpu: "1000m"
-        volumes:
-        - name: nexus-home
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: nexus-data
+              mountPath: /sonatype-work
+      volumes:
+        - name: nexus-data
           persistentVolumeClaim:
             claimName: nexus-pv-claim

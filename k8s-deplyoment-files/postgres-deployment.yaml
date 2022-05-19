@@ -31,7 +31,7 @@ spec:
     - ReadWriteMany # Access modes are defined below
   persistentVolumeReclaimPolicy: Recycle
   nfs:
-    server: 192.168.1.13 # Please change this to your NFS server
+    server: 192.168.1.106 # Please change this to your NFS server
     path: /srv/nfs4/data/postgresql # Please change this to the relevant share
 
 ---
