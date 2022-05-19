@@ -1,0 +1,13 @@
+.nav-link{
+    margin: 10px;
+    padding: 2px;
+    cursor: pointer;
+}
+li.nav-link:hover{
+    color: black;
+}
+
+.active{
+    background-color: gainsboro;
+    border-radius: 10%;   
+}
