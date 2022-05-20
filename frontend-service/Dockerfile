@@ -18,7 +18,7 @@ RUN ls -l
 EXPOSE 4200
 
 # Container start command (DO NOT CHANGE and see note below)
-CMD ["npm", "run", "prod"]
+CMD npm run prod
 
 # To start using a different `npm run [name]` command (e.g. to use nodemon + debugger),
 # edit devspace.yaml:
