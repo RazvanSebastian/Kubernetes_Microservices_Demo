@@ -1,14 +1,8 @@
 def tag="razvan95"
-def imageName="dummy-backend-service"
+def imageName="react-web-app"
 def imageTag="1.0"
 
 podTemplate(containers: [
-    containerTemplate(
-        name: "maven", 
-        image: "maven:3.3.9-jdk-8-alpine", 
-        ttyEnabled: true, 
-        command: "cat"
-    ),
     containerTemplate(
         name: "docker", 
         image: "docker", 
@@ -25,15 +19,9 @@ podTemplate(containers: [
     ],
 ){
     node(POD_LABEL) {
-        stage("maven container stage") {
+        stage("Git clone") {
             git "https://github.com/RazvanSebastian/Kubernetes_Microservices_Demo.git"
-            container("maven") {
-                stage("Build a Maven project") {
-                    withMaven(globalMavenSettingsConfig: 'fc6a1d65-6c48-4a26-a94f-70d8de49d93a', jdk: 'java', maven: 'maven_home') {
-                        sh "mvn clean install -DskipTests -B -f backend-service/pom.xml"
-                    }
-                }
-            }
+            sh "ls frontend-service -l"
         }
         stage("Docker container stage"){
             container("docker"){
@@ -45,18 +33,22 @@ podTemplate(containers: [
 			            pushToImage(imageName, imageTag, USERNAME, PASSWORD)
                     }
                 }
+                stage("Push image"){
+                    withCredentials([usernamePassword(credentialsId: "dockerhub", usernameVariable: "username", passwordVariable: "password")]) {
+                        pushToImage(imageName, imageTag, USERNAME, PASSWORD)
+                    }
+                }
             }
         }
-		stage("Kubernetes deploy"){
-			sshagent (credentials: ['k8s-sshAgent']) {
-				sh 'ssh -o StrictHostKeyChecking=no k8s-user@192.168.1.101 /home/k8s-deplyoment-files/web-apps/deployment-dummy-backend-service.sh'
-			}
-		}
+        stage("Kubernetes deploy"){
+            sh "sed -i 's/IMAGE_TAG/"+imageTag+"/g' k8s-deplyoment-files/frontend-deployment.yaml"
+            kubernetesDeploy(kubeconfigId: 'KUBERNETES_CLUSTER_CONFIG', configs: 'k8s-deplyoment-files/frontend-deployment.yaml', enableConfigSubstitution: true)
+        }
     }
 }
 
 def imageBuild(imageName, tag){
-    sh "docker build -t ${imageName}:${tag} --file backend-service/Dockerfile ."
+    sh "docker build -t ${imageName}:${tag} --file frontend-service/Dockerfile ."
 }
 
 def pushToImage(imageName, tag, dockerUser, dockerPassword){

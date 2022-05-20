@@ -1,42 +1,42 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: reactjs-app-service
+  name: dummy-frontend-service
   namespace: development
   labels:
-    app: reactjs-app
+    app: dummy-frontend-service
 spec:
   type: NodePort
   ports:
-  - port: 3000
-    targetPort: 3000
+  - port: 4200
+    targetPort: 4200
     nodePort: 30030
     protocol: TCP
   selector:
-    app: reactjs-app
+    app: dummy-frontend-service
 
 ---
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: reactjs-app-deployment
+  name: dummy-frontend-service
   namespace: development
   labels:
-    app: reactjs-app
+    app: dummy-frontend-service
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: reactjs-app
+      app: dummy-frontend-service
   template:
     metadata:
       labels:
-        app: reactjs-app
+        app: dummy-frontend-service
     spec:
       containers:
-      - name: reactjs-app
-        image: razvan95/react-web-app:IMAGE_TAG
+      - name: dummy-frontend-service
+        image: razvan95/dummy-frontend-service:1.0
         resources:
             requests:
                 memory: "128Mi"
@@ -45,4 +45,4 @@ spec:
                 memory: "256Mi"
                 cpu: "500m"
         ports:
-        - containerPort: 3000
+        - containerPort: 4200
