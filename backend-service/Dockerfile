@@ -11,4 +11,4 @@ ARG JAR_FILE=backend-service/target/*.jar
 COPY ${JAR_FILE} app.jar
 
 # Start the app
-ENTRYPOINT ["java","-jar","app.jar"]
+ENTRYPOINT ["java","-Dspring.profiles.active=prod","-jar","app.jar"]
