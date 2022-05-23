@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
 public class DemoController {
 
     private DemoService demoService;
@@ -17,12 +16,12 @@ public class DemoController {
         this.demoService = demoService;
     }
 
-    @GetMapping
+    @GetMapping("/entities")
     public ResponseEntity<List<DemoEntity>> findAll() {
         return ResponseEntity.ok(demoService.findAll());
     }
 
-    @PostMapping
+    @PostMapping("/entities")
     public ResponseEntity<DemoEntity> save(@RequestBody DemoEntity entity) {
         return ResponseEntity.status(HttpStatus.CREATED).body(demoService.save(entity));
     }
